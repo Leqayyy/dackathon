@@ -113,7 +113,8 @@ var havalimaniCoordinates = [
 var issues = [
     "Yolda Çatlak", 
     "Bilinmeyen Obje", 
-    "Kauçuk İzi"
+    "Kauçuk İzi",
+    "Kuş Sürüsü Var"
 ];
 
 function generateDots() {
@@ -132,7 +133,15 @@ function generateDots() {
 
             var size = Math.random() * 10 + 5; 
 
-            var color = getColorBasedOnSize(size);
+            var color = getRandomColor();
+
+            var issue;
+            if (color === 'red') {
+                var nonBirdIssues = issues.filter(issue => issue !== "Kuş Sürüsü Var");
+                issue = nonBirdIssues[Math.floor(Math.random() * nonBirdIssues.length)];
+            } else {
+                issue = issues[Math.floor(Math.random() * issues.length)];
+            }
 
             var marker = L.circleMarker([newLat, newLng], {
                 radius: size,
@@ -140,27 +149,26 @@ function generateDots() {
                 fillOpacity: 0.6
             }).addTo(map);
 
-            var issue = issues[Math.floor(Math.random() * issues.length)];
             dotsData.push({
                 name: havalimani.name,
                 lat: newLat,
                 lng: newLng,
                 size: size.toFixed(2),
-                issue: issue
+                issue: issue,
+                color: color
             });
 
             marker.on('click', function() {
                 var dot = dotsData.find(d => d.lat === this.getLatLng().lat && d.lng === this.getLatLng().lng);
-                alert(`Sorun: ${dot.issue}\nKoordinatlar: (${dot.lat.toFixed(4)}, ${dot.lng.toFixed(4)})`);
+                var resolution = dot.color === 'green' ? 'Drone Tarafından Çözülebilir.' : 'Teknik Destek Gereklidir.';
+                alert(`Sorun: ${dot.issue}\nKoordinatlar: (${dot.lat.toFixed(4)}, ${dot.lng.toFixed(4)})\n${resolution}`);
             });
         }
     });
 }
 
-function getColorBasedOnSize(size) {
-    if (size < 8) return 'red';
-    if (size < 12) return 'blue';
-    return 'green';
+function getRandomColor() {
+    return Math.random() < 0.5 ? 'red' : 'green';
 }
 
 function displayDotsData() {
