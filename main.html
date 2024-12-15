@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Türkiye Havalimanları Sorunları</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            height: 70vh; 
+            width: 100%;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .dot-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .dot-item {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .dot-item span {
+            font-weight: bold;
+        }
+
+        .dot-item p {
+            margin: 0;
+        }
+
+        .dot-item .size {
+            font-size: 0.9em;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="container">
+    <h2>Son 100 Tespit Edilen Sorunlar</h2>
+    <div class="dot-list" id="dotList"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+
+var map = L.map('map').setView([41.0082, 28.9784], 10); 
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+var dotsData = [];
+
+var havalimaniCoordinates = [
+    { name: "Adana Havalimanı", lat: 36.9819, lng: 35.2803 },
+    { name: "Ankara Esenboğa Havalimanı", lat: 40.1281, lng: 32.9944 },
+    { name: "Gazipaşa Havalimanı", lat: 36.2993, lng: 32.3014 },
+    { name: "Antalya Havalimanı", lat: 36.9003, lng: 30.7928 },
+    { name: "Balıkesir Koca Seyit Havalimanı", lat: 39.5544, lng: 27.0136 },
+    { name: "Bursa Yenişehir Havalimanı", lat: 40.2548, lng: 29.5625 },
+    { name: "Denizli Çardak Havalimanı", lat: 37.7856, lng: 29.7011 },
+    { name: "Diyarbakır Havalimanı", lat: 37.8947, lng: 40.2008 },
+    { name: "Elazığ Havalimanı", lat: 38.6067, lng: 39.2914 },
+    { name: "Erzurum Havalimanı", lat: 39.9553, lng: 41.1691 },
+    { name: "Eskişehir Hasan Polatkan Havalimanı", lat: 39.8100, lng: 30.5194 },
+    { name: "Gaziantep Havalimanı", lat: 37.9472, lng: 37.4666 },
+    { name: "Hatay Havalimanı", lat: 36.3628, lng: 36.2822 },
+    { name: "Isparta Süleyman Demirel Havalimanı", lat: 37.8650, lng: 30.3819 },
+    { name: "Istanbul Havalimanı", lat: 41.2649, lng: 28.7344 },
+    { name: "Istanbul Sabiha Gökçen Havalimanı", lat: 40.8983, lng: 29.3092 },
+    { name: "İzmir Adnan Menderes Havalimanı", lat: 38.2925, lng: 27.1827 },
+    { name: "Kars Harakani Havalimanı", lat: 40.5622, lng: 43.1144 },
+    { name: "Kayseri Havalimanı", lat: 38.7720, lng: 35.4970 },
+    { name: "Kocaeli Cengiz Topel Havalimanı", lat: 40.7345, lng: 30.0833 },
+    { name: "Konya Havalimanı", lat: 37.9789, lng: 32.5617 },
+    { name: "Zafer Havalimanı", lat: 39.1114, lng: 30.1297 },
+    { name: "Malatya Havalimanı", lat: 38.4358, lng: 38.0908 },
+    { name: "Çukurova International Havalimanı", lat: 36.8970, lng: 35.0675 },
+    { name: "Dalaman Havalimanı", lat: 36.7153, lng: 28.7928 },
+    { name: "Milas–Bodrum Havalimanı", lat: 37.2506, lng: 27.6642 },
+    { name: "Nevşehir Kapadokya Havalimanı", lat: 38.7689, lng: 34.5264 },
+    { name: "Ordu Giresun Havalimanı", lat: 40.9670, lng: 38.0764 },
+    { name: "Rize-Artvin Havalimanı", lat: 41.1691, lng: 40.8288 },
+    { name: "Samsun-Çarşamba Havalimanı", lat: 41.2656, lng: 36.5481 },
+    { name: "Sinop Havalimanı", lat: 42.0158, lng: 35.0664 },
+    { name: "Sivas Nuri Demirağ Havalimanı", lat: 39.7667, lng: 37.0167 },
+    { name: "Şanlıurfa GAP Havalimanı", lat: 37.4500, lng: 38.9000 },
+    { name: "Tekirdağ Çorlu Havalimanı", lat: 41.1392, lng: 27.9192 },
+    { name: "Trabzon Havalimanı", lat: 40.9951, lng: 39.7897 },
+    { name: "Van Ferit Melen Havalimanı", lat: 38.4683, lng: 43.3322 },
+    { name: "Zonguldak Çaycuma Havalimanı", lat: 41.5064, lng: 32.0886 }
+];
+
+var issues = [
+    "Yolda Çatlak", 
+    "Bilinmeyen Obje", 
+    "Kauçuk İzi"
+];
+
+function generateDots() {
+    havalimaniCoordinates.forEach(function(havalimani) {
+        var lat = havalimani.lat;
+        var lng = havalimani.lng;
+        var numDots = 5; 
+        var maxOffset = 0.02;
+
+        for (var i = 0; i < numDots; i++) {
+            var latOffset = (Math.random() - 0.5) * 2 * maxOffset;
+            var lngOffset = (Math.random() - 0.5) * 2 * maxOffset;
+
+            var newLat = lat + latOffset;
+            var newLng = lng + lngOffset;
+
+            var size = Math.random() * 10 + 5; 
+
+            var color = getColorBasedOnSize(size);
+
+            var marker = L.circleMarker([newLat, newLng], {
+                radius: size,
+                color: color,
+                fillOpacity: 0.6
+            }).addTo(map);
+
+            var issue = issues[Math.floor(Math.random() * issues.length)];
+            dotsData.push({
+                name: havalimani.name,
+                lat: newLat,
+                lng: newLng,
+                size: size.toFixed(2),
+                issue: issue
+            });
+
+            marker.on('click', function() {
+                var dot = dotsData.find(d => d.lat === this.getLatLng().lat && d.lng === this.getLatLng().lng);
+                alert(`Sorun: ${dot.issue}\nKoordinatlar: (${dot.lat.toFixed(4)}, ${dot.lng.toFixed(4)})`);
+            });
+        }
+    });
+}
+
+function getColorBasedOnSize(size) {
+    if (size < 8) return 'red';
+    if (size < 12) return 'blue';
+    return 'green';
+}
+
+function displayDotsData() {
+    var dotList = document.getElementById('dotList');
+    dotList.innerHTML = '';
+
+    dotsData.forEach(function(dot) {
+        var dotItem = document.createElement('div');
+        dotItem.className = 'dot-item';
+
+        dotItem.innerHTML = `
+            <span>${dot.name}</span><br>
+            Sorun: ${dot.issue}<br>
+            Koordinatlar: (${dot.lat.toFixed(4)}, ${dot.lng.toFixed(4)})<br>
+        `;
+        
+        dotList.appendChild(dotItem);
+    });
+}
+
+generateDots();
+displayDotsData();
+</script>
+
+</body>
+</html>
